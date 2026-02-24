@@ -1,4 +1,4 @@
-const apiKey = 'e3eafb17afa8c23a981f084ba3adaa6e';
+const apiKey = '2bf88471d531bcf8a5b4ee120f3130da';
 
 document.getElementById('weatherForm').addEventListener('submit', function (event) {
     event.preventDefault();
@@ -65,4 +65,5 @@ document.addEventListener("DOMContentLoaded", function () {
     if (lastCity) {
         getWeather(lastCity);
     }
+
 });

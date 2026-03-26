@@ -26,7 +26,8 @@ Previsioni Meteo è un'app leggera e responsive che permette di cercare il meteo
 
 ## Demo
 
-![Screenshot](screenshot.png)
+<img width="936" height="473" alt="Weather App" src="https://github.com/user-attachments/assets/3b8d792c-8c36-4850-bb70-10b216212d89" />
+
 
 ## Tecnologie utilizzate
 
@@ -43,7 +44,7 @@ Previsioni Meteo è un'app leggera e responsive che permette di cercare il meteo
 1. **Clona il repository**
 
    ```bash
-   git clone https://github.com/tuo-username/previsioni-meteo.git
+   git clone [https://github.com/tuo-username/previsioni-meteo.git](https://github.com/DavideB96/WeatherApp)
    cd previsioni-meteo
    ```
 
@@ -60,10 +61,6 @@ Previsioni Meteo è un'app leggera e responsive che permette di cercare il meteo
    ```js
    const API_KEY = 'LA_TUA_API_KEY';
    ```
-
-4. **Apri il progetto**
-
-   Apri `index.html` nel browser oppure utilizza un'estensione come [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) in VS Code.
 
 ## Struttura del progetto
 

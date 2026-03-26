@@ -1,69 +1,155 @@
-const apiKey = '2bf88471d531bcf8a5b4ee120f3130da';
+const API_KEY = '2bf88471d531bcf8a5b4ee120f3130da';
+const API_BASE = 'https://api.openweathermap.org/data/2.5/weather';
 
-document.getElementById('weatherForm').addEventListener('submit', function (event) {
-    event.preventDefault();
-    const city = document.getElementById('cityInput').value;
-    getWeather(city);
-});
+const form = document.getElementById('weatherForm');
+const input = document.getElementById('cityInput');
+const result = document.getElementById('weatherResult');
 
-function getWeather(city) {
+// ── Weather condition → emoji mapping ──
+const WEATHER_EMOJI = {
+  Clear:        '☀️',
+  Clouds:       '☁️',
+  Rain:         '🌧️',
+  Drizzle:      '🌦️',
+  Thunderstorm: '⛈️',
+  Snow:         '❄️',
+  Mist:         '🌫️',
+  Fog:          '🌫️',
+  Haze:         '🌁',
+  Dust:         '🏜️',
+  Sand:         '🏜️',
+  Smoke:        '💨',
+  Tornado:      '🌪️',
+  Squall:       '💨',
+  Ash:          '🌋',
+};
 
-    const weatherResult = document.getElementById('weatherResult');
-    weatherResult.innerHTML = `<div class="loader" aria-label="Loading"></div>`;
-
-    const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
-
-    fetch(apiUrl)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Errore nella richiesta");
-            }
-            return response.json();
-        })
-        .then(data => {
-            displayWeather(data);
-        })
-        .catch(error => {
-            showError("Errore nel recupero dei dati meteo.");
-        });
+// ── Wind direction helper ──
+function getWindDir(deg) {
+  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+  return dirs[Math.round(deg / 45) % 8];
 }
 
-function displayWeather(data) {
-    const weatherResult = document.getElementById("weatherResult");
+// ── Sanitize input ──
+function sanitize(str) {
+  return str.replace(/[<>&"']/g, '').trim();
+}
 
-    localStorage.setItem("lastCity", data.name);
-
-    const condition = data.weather[0].main;
-
-    let emoji;
-
-    if (condition === "Clear") emoji = "☀️";
-    else if (condition === "Clouds") emoji = "☁️";
-    else if (condition === "Rain") emoji = "🌧️";
-    else if (condition === "Snow") emoji = "❄️";
-    else if (condition === "Thunderstorm") emoji = "⛈️";
-    else emoji = "🌡️";
-
-    weatherResult.innerHTML = `
-    <h2>${data.name}, ${data.sys.country}</h2>
-    <div class="weather-emoji">${emoji}</div>
-    <p>Temperatura: ${data.main.temp}°C</p>
-    <p>Meteo: ${data.weather[0].description}</p>
-    <p>Umidità: ${data.main.humidity}%</p>
-    <p>Vento: ${data.wind.speed} m/s</p>
+// ── Show loading state ──
+function showLoading() {
+  result.innerHTML = `
+    <div class="loader-wrap">
+      <div class="loader" role="status" aria-label="Caricamento in corso"></div>
+      <p class="loader-text">Recupero dati meteo…</p>
+    </div>
   `;
 }
 
-function showError(message) {
-    const weatherResult = document.getElementById("weatherResult");
-    weatherResult.innerHTML = `<p class="error">${message}</p>`;
+// ── Show error ──
+function showError(message, hint = '') {
+  result.innerHTML = `
+    <div class="error-card" role="alert">
+      <span class="error-icon">😔</span>
+      <p class="error-msg">${message}</p>
+      ${hint ? `<p class="error-hint">${hint}</p>` : ''}
+    </div>
+  `;
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    const lastCity = localStorage.getItem("lastCity");
+// ── Display weather data ──
+function displayWeather(data) {
+  const emoji = WEATHER_EMOJI[data.weather[0].main] || '🌡️';
+  const windDir = data.wind.deg !== undefined ? ` ${getWindDir(data.wind.deg)}` : '';
+  const feelsLike = Math.round(data.main.feels_like);
+  const temp = Math.round(data.main.temp);
 
-    if (lastCity) {
-        getWeather(lastCity);
+  // Save last searched city
+  localStorage.setItem('lastCity', data.name);
+
+  result.innerHTML = `
+    <div class="weather-card">
+      <div class="city-name">
+        ${data.name}<span class="country-tag">${data.sys.country}</span>
+      </div>
+      <span class="weather-emoji" aria-label="${data.weather[0].description}">${emoji}</span>
+      <p class="weather-desc">${data.weather[0].description}</p>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-icon" aria-hidden="true">🌡️</span>
+          <span class="stat-value">${temp}°C</span>
+          <span class="stat-label">Temperatura</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon" aria-hidden="true">🤔</span>
+          <span class="stat-value">${feelsLike}°C</span>
+          <span class="stat-label">Percepita</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon" aria-hidden="true">💧</span>
+          <span class="stat-value">${data.main.humidity}%</span>
+          <span class="stat-label">Umidità</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon" aria-hidden="true">💨</span>
+          <span class="stat-value">${data.wind.speed} m/s${windDir}</span>
+          <span class="stat-label">Vento</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Fetch weather data ──
+async function getWeather(city) {
+  showLoading();
+
+  const safeName = sanitize(city);
+  if (!safeName) {
+    showError('Inserisci un nome di città valido.');
+    return;
+  }
+
+  const url = `${API_BASE}?q=${encodeURIComponent(safeName)}&appid=${API_KEY}&units=metric&lang=it`;
+
+  try {
+    const response = await fetch(url);
+
+    if (response.status === 404) {
+      showError(
+        `Città "${safeName}" non trovata.`,
+        'Controlla il nome e riprova.'
+      );
+      return;
     }
 
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    displayWeather(data);
+  } catch (err) {
+    console.error('Weather fetch error:', err);
+    showError(
+      'Impossibile recuperare i dati meteo.',
+      'Verifica la connessione e riprova.'
+    );
+  }
+}
+
+// ── Event listeners ──
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const city = input.value;
+  if (city.trim()) {
+    getWeather(city);
+  }
+});
+
+// ── Load last searched city on page load ──
+document.addEventListener('DOMContentLoaded', () => {
+  const lastCity = localStorage.getItem('lastCity');
+  if (lastCity) {
+    getWeather(lastCity);
+  }
 });

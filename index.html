@@ -1,25 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Previsioni Meteo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Previsioni Meteo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-    <div class="container">
-        <h1>Previsioni Meteo</h1>
-        <form id="weatherForm">
-            <input type="text" id="cityInput" placeholder="Inserisci una Città" required>
-            <button type="submit">Ottieni meteo</button>
-        </form>
-        <div id="weatherResult" class="weather-result">
-        </div>
-    </div>
-    <script src="main.js"></script>
-</body>
 
+  <!-- Background orbs -->
+  <div class="bg-orb" aria-hidden="true"></div>
+  <div class="bg-orb" aria-hidden="true"></div>
+  <div class="bg-orb" aria-hidden="true"></div>
+
+  <main class="container" role="main">
+    <header class="header">
+      <span class="header-icon" aria-hidden="true">⛅</span>
+      <h1>Previsioni Meteo</h1>
+      <p class="subtitle">Scopri il tempo in qualsiasi città del mondo</p>
+    </header>
+
+    <form class="search-form" id="weatherForm" role="search" aria-label="Cerca meteo per città">
+      <span class="search-icon" aria-hidden="true">🔍</span>
+      <input
+        type="text"
+        id="cityInput"
+        class="search-input"
+        placeholder="Inserisci una città..."
+        required
+        autocomplete="off"
+        aria-label="Nome della città"
+      >
+      <button type="submit" class="search-btn" aria-label="Cerca meteo">
+        Cerca
+      </button>
+    </form>
+
+    <section id="weatherResult" class="weather-result" aria-live="polite" aria-atomic="true">
+    </section>
+
+    <footer class="footer">
+      Dati forniti da <a href="https://openweathermap.org" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a>
+    </footer>
+  </main>
+
+  <script src="main.js"></script>
+</body>
 </html>

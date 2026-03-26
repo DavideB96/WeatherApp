@@ -45,13 +45,13 @@ App web semplice e moderna per visualizzare le previsioni meteo in tempo reale d
 1. Clona il repository:
 
 ```bash
-git clone https://github.com/TUO-USERNAME/NOME-REPO.git
+git clone https://github.com/DavideB96/WeatherApp.git
 ```
 
 2. Entra nella cartella:
 
 ```bash
-cd NOME-REPO
+cd WeatherApp
 ```
 
 3. Apri il file `index.html` nel browser

@@ -35,9 +35,16 @@
       <button type="submit" class="search-btn" aria-label="Cerca meteo">
         Cerca
       </button>
+      <ul id="suggestions" class="suggestions-list" role="listbox" aria-label="Suggerimenti città" hidden></ul>
     </form>
+    <button type="button" class="geo-btn" id="geoBtn" aria-label="Rileva posizione automatica">
+      <span aria-hidden="true">📍</span> Usa la mia posizione
+    </button>
 
     <section id="weatherResult" class="weather-result" aria-live="polite" aria-atomic="true">
+    </section>
+
+    <section id="forecastResult" aria-live="polite" aria-label="Previsioni 5 giorni">
     </section>
 
     <footer class="footer">

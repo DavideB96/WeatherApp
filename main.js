@@ -1,9 +1,11 @@
-const API_KEY = '2bf88471d531bcf8a5b4ee120f3130da';
-const API_BASE = 'https://api.openweathermap.org/data/2.5/weather';
+const API_KEY      = '2bf88471d531bcf8a5b4ee120f3130da';
+const API_BASE     = 'https://api.openweathermap.org/data/2.5/weather';
+const API_FORECAST = 'https://api.openweathermap.org/data/2.5/forecast';
 
-const form = document.getElementById('weatherForm');
-const input = document.getElementById('cityInput');
-const result = document.getElementById('weatherResult');
+const form           = document.getElementById('weatherForm');
+const input          = document.getElementById('cityInput');
+const result         = document.getElementById('weatherResult');
+const forecastResult = document.getElementById('forecastResult');
 
 // ── Weather condition → emoji mapping ──
 const WEATHER_EMOJI = {
@@ -23,6 +25,9 @@ const WEATHER_EMOJI = {
   Squall:       '💨',
   Ash:          '🌋',
 };
+
+const IT_DAYS   = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+const IT_MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
 // ── Wind direction helper ──
 function getWindDir(deg) {
@@ -54,6 +59,11 @@ function showError(message, hint = '') {
       ${hint ? `<p class="error-hint">${hint}</p>` : ''}
     </div>
   `;
+}
+
+// ── Clear forecast section ──
+function clearForecast() {
+  forecastResult.innerHTML = '';
 }
 
 // ── Display weather data ──
@@ -99,9 +109,70 @@ function displayWeather(data) {
   `;
 }
 
+// ── Display 5-day forecast ──
+function displayForecast(data) {
+  // Group 3-hour entries by date
+  const days = {};
+  data.list.forEach(item => {
+    const date = item.dt_txt.split(' ')[0];
+    if (!days[date]) days[date] = [];
+    days[date].push(item);
+  });
+
+  const dayEntries = Object.entries(days).slice(0, 5);
+
+  const cardsHtml = dayEntries.map(([date, items], idx) => {
+    const temps   = items.map(i => i.main.temp);
+    const minTemp = Math.round(Math.min(...temps));
+    const maxTemp = Math.round(Math.max(...temps));
+
+    // Prefer midday entry for weather condition
+    const rep   = items.find(i => i.dt_txt.includes('12:00:00')) || items[0];
+    const emoji = WEATHER_EMOJI[rep.weather[0].main] || '🌡️';
+    const desc  = rep.weather[0].description;
+
+    const d         = new Date(date + 'T12:00:00');
+    const dayName   = IT_DAYS[d.getDay()];
+    const dayNum    = d.getDate();
+    const monthName = IT_MONTHS[d.getMonth()];
+
+    return `
+      <div class="forecast-day" style="animation-delay:${0.25 + idx * 0.07}s">
+        <span class="forecast-date">${dayName}<small>${dayNum} ${monthName}</small></span>
+        <span class="forecast-emoji" title="${desc}">${emoji}</span>
+        <div class="forecast-temps">
+          <span class="forecast-max">${maxTemp}°</span>
+          <span class="forecast-min">${minTemp}°</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  forecastResult.innerHTML = `
+    <div class="forecast-card">
+      <h2 class="forecast-title">Prossimi 5 giorni</h2>
+      <div class="forecast-grid">${cardsHtml}</div>
+    </div>
+  `;
+}
+
+// ── Fetch 5-day forecast (non-blocking) ──
+async function fetchForecast(cityName) {
+  const url = `${API_FORECAST}?q=${encodeURIComponent(cityName)}&appid=${API_KEY}&units=metric&lang=it`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return;
+    const data = await response.json();
+    displayForecast(data);
+  } catch {
+    // Silently ignore — forecast is supplementary
+  }
+}
+
 // ── Fetch weather data ──
 async function getWeather(city) {
   showLoading();
+  clearForecast();
 
   const safeName = sanitize(city);
   if (!safeName) {
@@ -128,6 +199,7 @@ async function getWeather(city) {
 
     const data = await response.json();
     displayWeather(data);
+    fetchForecast(data.name);
   } catch (err) {
     console.error('Weather fetch error:', err);
     showError(

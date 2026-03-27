@@ -15,7 +15,8 @@ App web semplice e moderna per visualizzare le previsioni meteo in tempo reale d
 
 ## 📸 Anteprima
 
-<img width="936" height="473" alt="Weather App" src="https://github.com/user-attachments/assets/4414a236-a563-4b63-bf2e-39efdd1a6593" />
+<img width="938" height="472" alt="Weather App" src="https://github.com/user-attachments/assets/f55f8c68-4507-41a5-b7dc-ce80dde1d2cd" />
+
 
 ---
 
@@ -30,13 +31,16 @@ App web semplice e moderna per visualizzare le previsioni meteo in tempo reale d
 
 ## ⚙️ Funzionalità principali
 
-* 🔍 Ricerca meteo per città
-* 🌡️ Dati meteo in tempo reale
-* 🎨 Interfaccia moderna con animazioni
-* ⚡ Loader durante il caricamento
-* ❌ Gestione errori (città non trovata / problemi di rete)
-* 💾 Salvataggio ultima città cercata (localStorage)
-* 🌍 Supporto lingua italiana
+- 🔍 Ricerca meteo per città
+- 🌡️ Dati meteo in tempo reale
+- 📅 Previsione meteo a 5 giorni
+- 📍 Geolocalizzazione automatica
+- 💡 Suggerimenti di ricerca (autocomplete)
+- 🎨 Interfaccia moderna con animazioni
+- ⚡ Loader durante il caricamento
+- ❌ Gestione errori (città non trovata / problemi di rete)
+- 💾 Salvataggio ultima città cercata (localStorage)
+- 🌍 Supporto lingua italiana
 
 ---
 

@@ -145,7 +145,7 @@ h1 {
 .search-form {
   display: flex;
   gap: 0;
-  margin-bottom: 24px;
+  margin-bottom: 10px;
   position: relative;
 }
 
@@ -208,6 +208,41 @@ h1 {
 }
 
 .search-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Geolocation button ── */
+.geo-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 9px 18px;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  color: var(--text-secondary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82em;
+  font-weight: 400;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.geo-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.geo-btn:active {
+  transform: scale(0.98);
+}
+
+.geo-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }

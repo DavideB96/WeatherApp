@@ -6,6 +6,7 @@ const form           = document.getElementById('weatherForm');
 const input          = document.getElementById('cityInput');
 const result         = document.getElementById('weatherResult');
 const forecastResult = document.getElementById('forecastResult');
+const geoBtn         = document.getElementById('geoBtn');
 
 // ── Weather condition → emoji mapping ──
 const WEATHER_EMOJI = {
@@ -169,6 +170,29 @@ async function fetchForecast(cityName) {
   }
 }
 
+// ── Fetch weather by coordinates ──
+async function getWeatherByCoords(lat, lon) {
+  showLoading();
+  clearForecast();
+
+  const url = `${API_BASE}?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=it`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    input.value = data.name;
+    displayWeather(data);
+    fetchForecast(data.name);
+  } catch (err) {
+    console.error('Coords weather error:', err);
+    showError(
+      'Impossibile recuperare i dati meteo.',
+      'Verifica la connessione e riprova.'
+    );
+  }
+}
+
 // ── Fetch weather data ──
 async function getWeather(city) {
   showLoading();
@@ -216,6 +240,45 @@ form.addEventListener('submit', (e) => {
   if (city.trim()) {
     getWeather(city);
   }
+});
+
+// ── Geolocation button ──
+geoBtn.addEventListener('click', () => {
+  if (!navigator.geolocation) {
+    showError(
+      'Geolocalizzazione non supportata.',
+      'Il tuo browser non supporta questa funzione.'
+    );
+    return;
+  }
+
+  clearForecast();
+  result.innerHTML = `
+    <div class="loader-wrap">
+      <div class="loader" role="status" aria-label="Rilevamento posizione"></div>
+      <p class="loader-text">Rilevamento posizione…</p>
+    </div>
+  `;
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      getWeatherByCoords(pos.coords.latitude, pos.coords.longitude);
+    },
+    (err) => {
+      if (err.code === err.PERMISSION_DENIED) {
+        showError(
+          'Accesso alla posizione negato.',
+          'Consenti la geolocalizzazione nelle impostazioni del browser.'
+        );
+      } else {
+        showError(
+          'Impossibile rilevare la posizione.',
+          'Inserisci manualmente il nome della città.'
+        );
+      }
+    },
+    { timeout: 10000 }
+  );
 });
 
 // ── Load last searched city on page load ──

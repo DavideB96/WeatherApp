@@ -1,9 +1,15 @@
-const API_KEY = '2bf88471d531bcf8a5b4ee120f3130da';
-const API_BASE = 'https://api.openweathermap.org/data/2.5/weather';
+const API_KEY      = '2bf88471d531bcf8a5b4ee120f3130da';
+const API_BASE     = 'https://api.openweathermap.org/data/2.5/weather';
+const API_FORECAST = 'https://api.openweathermap.org/data/2.5/forecast';
 
-const form = document.getElementById('weatherForm');
-const input = document.getElementById('cityInput');
-const result = document.getElementById('weatherResult');
+const form           = document.getElementById('weatherForm');
+const input          = document.getElementById('cityInput');
+const result         = document.getElementById('weatherResult');
+const forecastResult = document.getElementById('forecastResult');
+const geoBtn         = document.getElementById('geoBtn');
+const suggestionsEl  = document.getElementById('suggestions');
+
+const API_GEO = 'https://api.openweathermap.org/geo/1.0/direct';
 
 // ── Weather condition → emoji mapping ──
 const WEATHER_EMOJI = {
@@ -23,6 +29,9 @@ const WEATHER_EMOJI = {
   Squall:       '💨',
   Ash:          '🌋',
 };
+
+const IT_DAYS   = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+const IT_MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
 // ── Wind direction helper ──
 function getWindDir(deg) {
@@ -56,6 +65,11 @@ function showError(message, hint = '') {
   `;
 }
 
+// ── Clear forecast section ──
+function clearForecast() {
+  forecastResult.innerHTML = '';
+}
+
 // ── Display weather data ──
 function displayWeather(data) {
   const emoji = WEATHER_EMOJI[data.weather[0].main] || '🌡️';
@@ -63,7 +77,6 @@ function displayWeather(data) {
   const feelsLike = Math.round(data.main.feels_like);
   const temp = Math.round(data.main.temp);
 
-  // Save last searched city
   localStorage.setItem('lastCity', data.name);
 
   result.innerHTML = `
@@ -99,9 +112,91 @@ function displayWeather(data) {
   `;
 }
 
+// ── Display 5-day forecast ──
+function displayForecast(data) {
+  const days = {};
+  data.list.forEach(item => {
+    const date = item.dt_txt.split(' ')[0];
+    if (!days[date]) days[date] = [];
+    days[date].push(item);
+  });
+
+  const dayEntries = Object.entries(days).slice(0, 5);
+
+  const cardsHtml = dayEntries.map(([date, items], idx) => {
+    const temps   = items.map(i => i.main.temp);
+    const minTemp = Math.round(Math.min(...temps));
+    const maxTemp = Math.round(Math.max(...temps));
+
+    const rep   = items.find(i => i.dt_txt.includes('12:00:00')) || items[0];
+    const emoji = WEATHER_EMOJI[rep.weather[0].main] || '🌡️';
+    const desc  = rep.weather[0].description;
+
+    const d         = new Date(date + 'T12:00:00');
+    const dayName   = IT_DAYS[d.getDay()];
+    const dayNum    = d.getDate();
+    const monthName = IT_MONTHS[d.getMonth()];
+
+    return `
+      <div class="forecast-day" style="animation-delay:${0.25 + idx * 0.07}s">
+        <span class="forecast-date">${dayName}<small>${dayNum} ${monthName}</small></span>
+        <span class="forecast-emoji" title="${desc}">${emoji}</span>
+        <div class="forecast-temps">
+          <span class="forecast-max">${maxTemp}°</span>
+          <span class="forecast-min">${minTemp}°</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  forecastResult.innerHTML = `
+    <div class="forecast-card">
+      <h2 class="forecast-title">Prossimi 5 giorni</h2>
+      <div class="forecast-grid">${cardsHtml}</div>
+    </div>
+  `;
+}
+
+// ── Fetch 5-day forecast (non-blocking) ──
+async function fetchForecast(cityName) {
+  const url = `${API_FORECAST}?q=${encodeURIComponent(cityName)}&appid=${API_KEY}&units=metric&lang=it`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return;
+    const data = await response.json();
+    displayForecast(data);
+  } catch {
+    // Silently ignore — forecast is supplementary
+  }
+}
+
+// ── Fetch weather by coordinates ──
+async function getWeatherByCoords(lat, lon) {
+  showLoading();
+  clearForecast();
+
+  const url = `${API_BASE}?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=it`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    input.value = data.name;
+    displayWeather(data);
+    fetchForecast(data.name);
+  } catch (err) {
+    console.error('Coords weather error:', err);
+    showError(
+      'Impossibile recuperare i dati meteo.',
+      'Verifica la connessione e riprova.'
+    );
+  }
+}
+
 // ── Fetch weather data ──
 async function getWeather(city) {
   showLoading();
+  clearForecast();
 
   const safeName = sanitize(city);
   if (!safeName) {
@@ -128,6 +223,7 @@ async function getWeather(city) {
 
     const data = await response.json();
     displayWeather(data);
+    fetchForecast(data.name);
   } catch (err) {
     console.error('Weather fetch error:', err);
     showError(
@@ -137,6 +233,61 @@ async function getWeather(city) {
   }
 }
 
+// ── Autocomplete ──
+function debounce(fn, ms) {
+  let timer;
+  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+}
+
+function hideSuggestions() {
+  suggestionsEl.innerHTML = '';
+  suggestionsEl.hidden = true;
+}
+
+function showSuggestions(cities) {
+  suggestionsEl.innerHTML = '';
+  if (!cities.length) { suggestionsEl.hidden = true; return; }
+
+  cities.forEach(city => {
+    const parts = [city.name, city.state, city.country].filter(Boolean);
+    const li = document.createElement('li');
+    li.className = 'suggestion-item';
+    li.setAttribute('role', 'option');
+    li.textContent = parts.join(', ');
+    li.dataset.name = city.name;
+
+    li.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      input.value = city.name;
+      hideSuggestions();
+      getWeather(city.name);
+    });
+
+    suggestionsEl.appendChild(li);
+  });
+
+  suggestionsEl.hidden = false;
+}
+
+async function fetchSuggestions(query) {
+  if (query.length < 2) { hideSuggestions(); return; }
+
+  const url = `${API_GEO}?q=${encodeURIComponent(query)}&limit=5&appid=${API_KEY}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return;
+    showSuggestions(await response.json());
+  } catch {
+    // fail silently
+  }
+}
+
+const debouncedSuggest = debounce(fetchSuggestions, 300);
+
+input.addEventListener('input', () => debouncedSuggest(input.value.trim()));
+input.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideSuggestions(); });
+input.addEventListener('blur', () => setTimeout(hideSuggestions, 150));
+
 // ── Event listeners ──
 form.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -144,6 +295,45 @@ form.addEventListener('submit', (e) => {
   if (city.trim()) {
     getWeather(city);
   }
+});
+
+// ── Geolocation button ──
+geoBtn.addEventListener('click', () => {
+  if (!navigator.geolocation) {
+    showError(
+      'Geolocalizzazione non supportata.',
+      'Il tuo browser non supporta questa funzione.'
+    );
+    return;
+  }
+
+  clearForecast();
+  result.innerHTML = `
+    <div class="loader-wrap">
+      <div class="loader" role="status" aria-label="Rilevamento posizione"></div>
+      <p class="loader-text">Rilevamento posizione…</p>
+    </div>
+  `;
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      getWeatherByCoords(pos.coords.latitude, pos.coords.longitude);
+    },
+    (err) => {
+      if (err.code === err.PERMISSION_DENIED) {
+        showError(
+          'Accesso alla posizione negato.',
+          'Consenti la geolocalizzazione nelle impostazioni del browser.'
+        );
+      } else {
+        showError(
+          'Impossibile rilevare la posizione.',
+          'Inserisci manualmente il nome della città.'
+        );
+      }
+    },
+    { timeout: 10000 }
+  );
 });
 
 // ── Load last searched city on page load ──

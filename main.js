@@ -7,6 +7,9 @@ const input          = document.getElementById('cityInput');
 const result         = document.getElementById('weatherResult');
 const forecastResult = document.getElementById('forecastResult');
 const geoBtn         = document.getElementById('geoBtn');
+const suggestionsEl  = document.getElementById('suggestions');
+
+const API_GEO = 'https://api.openweathermap.org/geo/1.0/direct';
 
 // ── Weather condition → emoji mapping ──
 const WEATHER_EMOJI = {
@@ -232,6 +235,61 @@ async function getWeather(city) {
     );
   }
 }
+
+// ── Autocomplete ──
+function debounce(fn, ms) {
+  let timer;
+  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+}
+
+function hideSuggestions() {
+  suggestionsEl.innerHTML = '';
+  suggestionsEl.hidden = true;
+}
+
+function showSuggestions(cities) {
+  suggestionsEl.innerHTML = '';
+  if (!cities.length) { suggestionsEl.hidden = true; return; }
+
+  cities.forEach(city => {
+    const parts = [city.name, city.state, city.country].filter(Boolean);
+    const li = document.createElement('li');
+    li.className = 'suggestion-item';
+    li.setAttribute('role', 'option');
+    li.textContent = parts.join(', ');
+    li.dataset.name = city.name;
+
+    li.addEventListener('mousedown', (e) => {
+      e.preventDefault(); // evita blur prima del click
+      input.value = city.name;
+      hideSuggestions();
+      getWeather(city.name);
+    });
+
+    suggestionsEl.appendChild(li);
+  });
+
+  suggestionsEl.hidden = false;
+}
+
+async function fetchSuggestions(query) {
+  if (query.length < 2) { hideSuggestions(); return; }
+
+  const url = `${API_GEO}?q=${encodeURIComponent(query)}&limit=5&appid=${API_KEY}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return;
+    showSuggestions(await response.json());
+  } catch {
+    // fail silently
+  }
+}
+
+const debouncedSuggest = debounce(fetchSuggestions, 300);
+
+input.addEventListener('input', () => debouncedSuggest(input.value.trim()));
+input.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideSuggestions(); });
+input.addEventListener('blur', () => setTimeout(hideSuggestions, 150));
 
 // ── Event listeners ──
 form.addEventListener('submit', (e) => {

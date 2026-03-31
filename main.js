@@ -13,29 +13,29 @@ const API_GEO = 'https://api.openweathermap.org/geo/1.0/direct';
 
 // ── Weather condition → emoji mapping ──
 const WEATHER_EMOJI = {
-  Clear:        '☀️',
-  Clouds:       '☁️',
-  Rain:         '🌧️',
-  Drizzle:      '🌦️',
+  Clear: '☀️',
+  Clouds: '☁️',
+  Rain: '🌧️',
+  Drizzle: '🌦️',
   Thunderstorm: '⛈️',
-  Snow:         '❄️',
-  Mist:         '🌫️',
-  Fog:          '🌫️',
-  Haze:         '🌁',
-  Dust:         '🏜️',
-  Sand:         '🏜️',
-  Smoke:        '💨',
-  Tornado:      '🌪️',
-  Squall:       '💨',
-  Ash:          '🌋',
+  Snow: '❄️',
+  Mist: '🌫️',
+  Fog: '🌫️',
+  Haze: '🌁',
+  Dust: '🏜️',
+  Sand: '🏜️',
+  Smoke: '💨',
+  Tornado: '🌪️',
+  Squall: '💨',
+  Ash: '🌋',
 };
 
-const IT_DAYS   = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
-const IT_MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+const EN_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 // ── Wind direction helper ──
 function getWindDir(deg) {
-  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
   return dirs[Math.round(deg / 45) % 8];
 }
 
@@ -48,8 +48,8 @@ function sanitize(str) {
 function showLoading() {
   result.innerHTML = `
     <div class="loader-wrap">
-      <div class="loader" role="status" aria-label="Caricamento in corso"></div>
-      <p class="loader-text">Recupero dati meteo…</p>
+      <div class="loader" role="status" aria-label="Loading"></div>
+      <p class="loader-text">Fetching weather data…</p>
     </div>
   `;
 }
@@ -90,22 +90,22 @@ function displayWeather(data) {
         <div class="stat-item">
           <span class="stat-icon" aria-hidden="true">🌡️</span>
           <span class="stat-value">${temp}°C</span>
-          <span class="stat-label">Temperatura</span>
+          <span class="stat-label">Temperature</span>
         </div>
         <div class="stat-item">
           <span class="stat-icon" aria-hidden="true">🤔</span>
           <span class="stat-value">${feelsLike}°C</span>
-          <span class="stat-label">Percepita</span>
+          <span class="stat-label">Feels like</span>
         </div>
         <div class="stat-item">
           <span class="stat-icon" aria-hidden="true">💧</span>
           <span class="stat-value">${data.main.humidity}%</span>
-          <span class="stat-label">Umidità</span>
+          <span class="stat-label">Humidity</span>
         </div>
         <div class="stat-item">
           <span class="stat-icon" aria-hidden="true">💨</span>
           <span class="stat-value">${data.wind.speed} m/s${windDir}</span>
-          <span class="stat-label">Vento</span>
+          <span class="stat-label">Wind</span>
         </div>
       </div>
     </div>
@@ -115,6 +115,7 @@ function displayWeather(data) {
 // ── Display 5-day forecast ──
 function displayForecast(data) {
   const days = {};
+
   data.list.forEach(item => {
     const date = item.dt_txt.split(' ')[0];
     if (!days[date]) days[date] = [];
@@ -124,18 +125,18 @@ function displayForecast(data) {
   const dayEntries = Object.entries(days).slice(0, 5);
 
   const cardsHtml = dayEntries.map(([date, items], idx) => {
-    const temps   = items.map(i => i.main.temp);
+    const temps = items.map(i => i.main.temp);
     const minTemp = Math.round(Math.min(...temps));
     const maxTemp = Math.round(Math.max(...temps));
 
-    const rep   = items.find(i => i.dt_txt.includes('12:00:00')) || items[0];
+    const rep = items.find(i => i.dt_txt.includes('12:00:00')) || items[0];
     const emoji = WEATHER_EMOJI[rep.weather[0].main] || '🌡️';
-    const desc  = rep.weather[0].description;
+    const desc = rep.weather[0].description;
 
-    const d         = new Date(date + 'T12:00:00');
-    const dayName   = IT_DAYS[d.getDay()];
-    const dayNum    = d.getDate();
-    const monthName = IT_MONTHS[d.getMonth()];
+    const d = new Date(date + 'T12:00:00');
+    const dayName = EN_DAYS[d.getDay()];
+    const dayNum = d.getDate();
+    const monthName = EN_MONTHS[d.getMonth()];
 
     return `
       <div class="forecast-day" style="animation-delay:${0.25 + idx * 0.07}s">
@@ -151,7 +152,7 @@ function displayForecast(data) {
 
   forecastResult.innerHTML = `
     <div class="forecast-card">
-      <h2 class="forecast-title">Prossimi 5 giorni</h2>
+      <h2 class="forecast-title">Next 5 days</h2>
       <div class="forecast-grid">${cardsHtml}</div>
     </div>
   `;
@@ -159,10 +160,12 @@ function displayForecast(data) {
 
 // ── Fetch 5-day forecast (non-blocking) ──
 async function fetchForecast(cityName) {
-  const url = `${API_FORECAST}?q=${encodeURIComponent(cityName)}&appid=${API_KEY}&units=metric&lang=it`;
+  const url = `${API_FORECAST}?q=${encodeURIComponent(cityName)}&appid=${API_KEY}&units=metric&lang=en`;
+
   try {
     const response = await fetch(url);
     if (!response.ok) return;
+
     const data = await response.json();
     displayForecast(data);
   } catch {
@@ -175,11 +178,12 @@ async function getWeatherByCoords(lat, lon) {
   showLoading();
   clearForecast();
 
-  const url = `${API_BASE}?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=it`;
+  const url = `${API_BASE}?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=en`;
 
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
     const data = await response.json();
     input.value = data.name;
     displayWeather(data);
@@ -187,8 +191,8 @@ async function getWeatherByCoords(lat, lon) {
   } catch (err) {
     console.error('Coords weather error:', err);
     showError(
-      'Impossibile recuperare i dati meteo.',
-      'Verifica la connessione e riprova.'
+      'Unable to fetch weather data.',
+      'Check your connection and try again.'
     );
   }
 }
@@ -200,19 +204,19 @@ async function getWeather(city) {
 
   const safeName = sanitize(city);
   if (!safeName) {
-    showError('Inserisci un nome di città valido.');
+    showError('Please enter a valid city name.');
     return;
   }
 
-  const url = `${API_BASE}?q=${encodeURIComponent(safeName)}&appid=${API_KEY}&units=metric&lang=it`;
+  const url = `${API_BASE}?q=${encodeURIComponent(safeName)}&appid=${API_KEY}&units=metric&lang=en`;
 
   try {
     const response = await fetch(url);
 
     if (response.status === 404) {
       showError(
-        `Città "${safeName}" non trovata.`,
-        'Controlla il nome e riprova.'
+        `City "${safeName}" not found.`,
+        'Check the name and try again.'
       );
       return;
     }
@@ -227,8 +231,8 @@ async function getWeather(city) {
   } catch (err) {
     console.error('Weather fetch error:', err);
     showError(
-      'Impossibile recuperare i dati meteo.',
-      'Verifica la connessione e riprova.'
+      'Unable to fetch weather data.',
+      'Check your connection and try again.'
     );
   }
 }
@@ -236,7 +240,10 @@ async function getWeather(city) {
 // ── Autocomplete ──
 function debounce(fn, ms) {
   let timer;
-  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
 }
 
 function hideSuggestions() {
@@ -246,7 +253,11 @@ function hideSuggestions() {
 
 function showSuggestions(cities) {
   suggestionsEl.innerHTML = '';
-  if (!cities.length) { suggestionsEl.hidden = true; return; }
+
+  if (!cities.length) {
+    suggestionsEl.hidden = true;
+    return;
+  }
 
   cities.forEach(city => {
     const parts = [city.name, city.state, city.country].filter(Boolean);
@@ -270,28 +281,36 @@ function showSuggestions(cities) {
 }
 
 async function fetchSuggestions(query) {
-  if (query.length < 2) { hideSuggestions(); return; }
+  if (query.length < 2) {
+    hideSuggestions();
+    return;
+  }
 
   const url = `${API_GEO}?q=${encodeURIComponent(query)}&limit=5&appid=${API_KEY}`;
+
   try {
     const response = await fetch(url);
     if (!response.ok) return;
+
     showSuggestions(await response.json());
   } catch {
-    // fail silently
+    // Fail silently
   }
 }
 
 const debouncedSuggest = debounce(fetchSuggestions, 300);
 
 input.addEventListener('input', () => debouncedSuggest(input.value.trim()));
-input.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideSuggestions(); });
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') hideSuggestions();
+});
 input.addEventListener('blur', () => setTimeout(hideSuggestions, 150));
 
 // ── Event listeners ──
 form.addEventListener('submit', (e) => {
   e.preventDefault();
   const city = input.value;
+
   if (city.trim()) {
     getWeather(city);
   }
@@ -301,8 +320,8 @@ form.addEventListener('submit', (e) => {
 geoBtn.addEventListener('click', () => {
   if (!navigator.geolocation) {
     showError(
-      'Geolocalizzazione non supportata.',
-      'Il tuo browser non supporta questa funzione.'
+      'Geolocation not supported.',
+      'Your browser does not support this feature.'
     );
     return;
   }
@@ -310,8 +329,8 @@ geoBtn.addEventListener('click', () => {
   clearForecast();
   result.innerHTML = `
     <div class="loader-wrap">
-      <div class="loader" role="status" aria-label="Rilevamento posizione"></div>
-      <p class="loader-text">Rilevamento posizione…</p>
+      <div class="loader" role="status" aria-label="Detecting location"></div>
+      <p class="loader-text">Detecting location…</p>
     </div>
   `;
 
@@ -322,13 +341,13 @@ geoBtn.addEventListener('click', () => {
     (err) => {
       if (err.code === err.PERMISSION_DENIED) {
         showError(
-          'Accesso alla posizione negato.',
-          'Consenti la geolocalizzazione nelle impostazioni del browser.'
+          'Location access denied.',
+          'Enable geolocation in your browser settings.'
         );
       } else {
         showError(
-          'Impossibile rilevare la posizione.',
-          'Inserisci manualmente il nome della città.'
+          'Unable to detect location.',
+          'Enter the city name manually.'
         );
       }
     },

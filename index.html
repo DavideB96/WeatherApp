@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Previsioni Meteo</title>
+  <title>Weather Forecast</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -17,38 +17,39 @@
   <main class="container" role="main">
     <header class="header">
       <span class="header-icon" aria-hidden="true">⛅</span>
-      <h1>Previsioni Meteo</h1>
-      <p class="subtitle">Scopri il tempo in qualsiasi città del mondo</p>
+      <h1>Weather Forecast</h1>
+      <p class="subtitle">Check the weather in any city worldwide</p>
     </header>
 
-    <form class="search-form" id="weatherForm" role="search" aria-label="Cerca meteo per città">
+    <form class="search-form" id="weatherForm" role="search" aria-label="Search weather by city">
       <span class="search-icon" aria-hidden="true">🔍</span>
       <input
         type="text"
         id="cityInput"
         class="search-input"
-        placeholder="Inserisci una città..."
+        placeholder="Enter a city..."
         required
         autocomplete="off"
-        aria-label="Nome della città"
+        aria-label="City name"
       >
-      <button type="submit" class="search-btn" aria-label="Cerca meteo">
-        Cerca
+      <button type="submit" class="search-btn" aria-label="Search weather">
+        Search
       </button>
-      <ul id="suggestions" class="suggestions-list" role="listbox" aria-label="Suggerimenti città" hidden></ul>
+      <ul id="suggestions" class="suggestions-list" role="listbox" aria-label="City suggestions" hidden></ul>
     </form>
-    <button type="button" class="geo-btn" id="geoBtn" aria-label="Rileva posizione automatica">
-      <span aria-hidden="true">📍</span> Usa la mia posizione
+
+    <button type="button" class="geo-btn" id="geoBtn" aria-label="Detect current location">
+      <span aria-hidden="true">📍</span> Use my location
     </button>
 
     <section id="weatherResult" class="weather-result" aria-live="polite" aria-atomic="true">
     </section>
 
-    <section id="forecastResult" aria-live="polite" aria-label="Previsioni 5 giorni">
+    <section id="forecastResult" aria-live="polite" aria-label="5-day forecast">
     </section>
 
     <footer class="footer">
-      Dati forniti da <a href="https://openweathermap.org" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a>
+      Data provided by <a href="https://openweathermap.org" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a>
     </footer>
   </main>
 
